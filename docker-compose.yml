@@ -1,0 +1,58 @@
+version: "3"
+services:
+    twitter:
+        build:
+            context: ./docker
+            dockerfile: Dockerfile
+            args:
+                WWWGROUP: '${WWWGROUP}'
+        image: twitter
+        ports:
+            - '${APP_PORT:-83}:80'
+        environment:
+            WWWUSER: '${WWWUSER}'
+        container_name: 'twitter'
+        volumes:
+            - '.:/var/www/html/twitter'
+        networks:
+            - twitter
+        depends_on:
+            - mysql
+            - redis
+    mysql:
+        image: 'mysql:8.0.28'
+        ports:
+            - '${FORWARD_DB_PORT:-33061}:3306'
+        container_name: 'twitterDatabase'
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: 'secret'
+            MYSQL_DATABASE: 'twitter'
+            MYSQL_USER: 'twitter'
+            MYSQL_PASSWORD: 'secret'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+        volumes:
+            - 'twitterMysql:/var/lib/mysql'
+        networks:
+            - twitter
+    redis:
+        image: 'redis:latest'
+        container_name: 'twitterRedis'
+        restart: unless-stopped
+        tty: true
+        command: >
+            --requirepass ${REDIS_PASSWORD:-secret}
+        ports:
+            - '63791:6379'
+        volumes:
+            - 'twitterRedis:/data'
+        networks:
+            - twitter
+networks:
+    twitter:
+        driver: bridge
+volumes:
+    twitterMysql:
+        driver: local
+    twitterRedis:
+        driver: local

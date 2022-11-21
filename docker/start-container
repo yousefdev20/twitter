@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+if [ ! -z "$WWWUSER" ]; then
+    usermod -u $WWWUSER twitter
+fi
+
+if [ ! -d /.composer ]; then
+    mkdir /.composer
+fi
+
+chmod -R ugo+rw /.composer
+
+if [ $# -gt 0 ]; then
+    echo "we are here"
+    exec gosu $WWWUSER "$@"
+else
+    echo "else supervisor"
+    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+fi
